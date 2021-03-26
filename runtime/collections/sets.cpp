@@ -8,7 +8,7 @@ extern "C" {
   }
 
   block *set_iterator_next(setiter *iter) {
-    if (iter->curr == iter->set->end()) {
+    if (iter->curr == iter->s->end()) {
       return nullptr;
     }
     return *(iter->curr++);

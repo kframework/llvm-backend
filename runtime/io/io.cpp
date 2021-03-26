@@ -119,7 +119,7 @@ extern "C" {
   static blockheader header_int() {
     static blockheader header = {(uint64_t)-1};
 
-    if (header.hdr == -1) {
+    if (header.hdr == (uint64_t)-1) {
       header = getBlockHeaderForSymbol((uint64_t)getTagForSymbolName("inj{SortInt{}, SortIOInt{}}"));
     }
 
@@ -129,7 +129,7 @@ extern "C" {
   blockheader header_err() {
     static blockheader header = {(uint64_t)-1};
 
-    if (header.hdr == -1) {
+    if (header.hdr == (uint64_t)-1) {
       header = getBlockHeaderForSymbol((uint64_t)getTagForSymbolName("inj{SortIOError{}, SortKItem{}}"));
     }
 
@@ -139,7 +139,7 @@ extern "C" {
   static blockheader header_string() {
     static blockheader header = {(uint64_t)-1};
 
-    if (header.hdr == -1) {
+    if (header.hdr == (uint64_t)-1) {
       header = getBlockHeaderForSymbol((uint64_t)getTagForSymbolName("inj{SortString{}, SortIOString{}}"));
     }
 
@@ -330,7 +330,7 @@ extern "C" {
     result = static_cast<string *>(koreResizeLastAlloc(result, sizeof(string) + bytes, sizeof(string) + length));
     block * retBlock = static_cast<block *>(koreAlloc(sizeof(block) + sizeof(string *)));
     retBlock->h = header_string();
-    set_len(result, bytes);
+    set_len(result, (size_t)bytes);
     memcpy(retBlock->children, &result, sizeof(string *));
     return retBlock;
   }

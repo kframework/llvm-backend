@@ -25,9 +25,9 @@ enum Fixity {
  * returns: the index of the nonterminal within the list of all nonterminals
  * and terminals of the production the symbol corresponds to.
  */
-int getNTPositionInProd(std::string terminals, int position) {
-  int terminalPos = 0;
-  int ntIdx = 0;
+size_t getNTPositionInProd(std::string terminals, size_t position) {
+  size_t terminalPos = 0;
+  size_t ntIdx = 0;
   for (; terminalPos < terminals.size(); terminalPos++) {
     if (terminals[terminalPos] == '0') {
       if (ntIdx == position) {
@@ -45,7 +45,7 @@ int getNTPositionInProd(std::string terminals, int position) {
  * Out of bounds errors do not occur with this function: if the index is out of
  * range, `false` is returned, indicating there is not a terminal at that index
  */
-bool hasTerminalAtIdx(std::string terminals, int position) {
+bool hasTerminalAtIdx(std::string terminals, size_t position) {
   if (position < 0 || position >= terminals.length()) {
     return false;
   }
@@ -71,11 +71,11 @@ bool hasTerminalAtIdx(std::string terminals, int position) {
 Fixity getFixity(int position, KORESymbol *sym, PrettyPrintData const& data) {
   int result = EMPTY;
   std::string terminals = data.terminals.at(sym->getName());
-  int terminalPos = getNTPositionInProd(terminals, position);
+  size_t terminalPos = getNTPositionInProd(terminals, position);
   if (!hasTerminalAtIdx(terminals, terminalPos+1)) {
     result |= BARE_RIGHT;
   }
-  if (!hasTerminalAtIdx(terminals, terminalPos-1)) {
+  if (terminalPos == 0 || !hasTerminalAtIdx(terminals, terminalPos-1)) {
     result |= BARE_LEFT;
   }
   return (Fixity) result;
@@ -162,7 +162,7 @@ KORECompositePattern *getLeftCapture(KORECompositePattern *previousLeftCapture, 
 
 KORECompositePattern *getRightCapture(KORECompositePattern *previousRightCapture, KORECompositePattern *outer, int position, PrettyPrintData const& data) {
   Fixity fixity = getFixity(outer->getConstructor(), data);
-  if (position == outer->getArguments().size() - 1 && (fixity & BARE_RIGHT)) {
+  if (position == (int)outer->getArguments().size() - 1 && (fixity & BARE_RIGHT)) {
     return previousRightCapture;
   } else {
     return outer;
@@ -279,8 +279,8 @@ bool isPriorityWrong(KORECompositePattern *outer, KORECompositePattern *inner, i
     return true;
   }
   std::string terminals = data.terminals.at(outerName);
-  int terminalPos = getNTPositionInProd(terminals, position);
-  if (data.leftAssoc.count(outerName) && data.leftAssoc.at(outerName).count(innerName) && terminalPos == terminals.size() - 1) {
+  size_t terminalPos = getNTPositionInProd(terminals, position);
+  if (data.leftAssoc.count(outerName) && data.leftAssoc.at(outerName).count(innerName) && terminalPos + 1 == terminals.size()) {
     return true;
   }
   if (data.rightAssoc.count(outerName) && data.rightAssoc.at(outerName).count(innerName) && terminalPos == 0) {
@@ -411,7 +411,7 @@ sptr<KOREPattern> addBrackets(sptr<KOREPattern> t, KORECompositePattern *previou
     std::vector<sptr<KOREPattern>> newItems;
 
     sptr<KORECompositePattern> result = KORECompositePattern::Create(outer->getConstructor());
-    int position = 0;
+    size_t position = 0;
     for (auto &inner : outer->getArguments()) {
       KORECompositePattern *leftCapture = getLeftCapture(previousLeftCapture, outer, position, data);
       KORECompositePattern *rightCapture = getRightCapture(previousRightCapture, outer, position, data);

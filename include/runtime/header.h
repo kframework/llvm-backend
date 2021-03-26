@@ -20,7 +20,7 @@
 
 #define len(s) len_hdr((s)->h.hdr)
 #define len_hdr(s) ((s) & LENGTH_MASK)
-#define set_len(s, l) ((s)->h.hdr = (l) | (l > BLOCK_SIZE - sizeof(char *) ? NOT_YOUNG_OBJECT_BIT : 0))
+#define set_len(s, l) ((s)->h.hdr = (l) | ((l) > BLOCK_SIZE - sizeof(char *) ? NOT_YOUNG_OBJECT_BIT : 0))
 #define size_hdr(s) ((((s) >> 32) & 0xff) * 8)
 #define layout(s) layout_hdr((s)->h.hdr)
 #define layout_hdr(s) ((s) >> LAYOUT_OFFSET)
@@ -159,12 +159,12 @@ using set = immer::set<KElem, HashBlock, std::equal_to<KElem>, list::memory_poli
 
 typedef struct mapiter {
   map::iterator curr;
-  map *map;
+  map *m;
 } mapiter;
 
 typedef struct setiter {
   set::iterator curr;
-  set *set;
+  set *s;
 } setiter;
 
 typedef floating *SortFloat;

@@ -34,7 +34,7 @@ void initDebugFunction(std::string name, std::string linkageName, llvm::DISubrou
   if(!Dbg) return;
   auto Unit = Dbg->createFile(DbgFile->getFilename(), DbgFile->getDirectory());
   llvm::DIScope *FContext = Unit;
-#if __clang_major__ >= 8
+#if LLVM_LIB_VERSION_MAJOR >= 8
   DbgSP = Dbg->createFunction(
     FContext,
     name,
@@ -167,6 +167,7 @@ llvm::DIType *getDebugType(ValueType type, std::string typeName) {
     abort();
 
   }
+  return nullptr;
 }
 
 llvm::DIType *getIntDebugType(void) {

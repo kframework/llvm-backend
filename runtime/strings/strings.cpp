@@ -112,7 +112,8 @@ extern "C" {
     }
     auto out = std::search(haystack->data + upos * sizeof(KCHAR), haystack->data + len(haystack) * sizeof(KCHAR),
         needle->data,   needle->data   + len(needle) * sizeof(KCHAR));
-    int64_t ret = (out - haystack->data) / sizeof(KCHAR);
+    assert(out >= haystack->data);
+    uint64_t ret = (out - haystack->data) / sizeof(KCHAR);
     // search returns the end of the range if it is not found, but we want -1 in such a case.
     auto res = (ret < len(haystack))?ret:-1;
     mpz_init_set_si(result, res);
@@ -129,7 +130,8 @@ extern "C" {
     auto end = (upos < len(haystack))?upos:len(haystack);
     auto out = std::find_end(&haystack->data[0], &haystack->data[end],
         &needle->data[0], &needle->data[len(needle)]);
-    auto ret = &*out - &haystack->data[0];
+    assert(&*out >= &haystack->data[0]);
+    uint64_t ret = &*out - &haystack->data[0];
     auto res = (ret < end)?ret:-1;
     mpz_init_set_si(result, res);
     return move_int(result);
@@ -144,7 +146,8 @@ extern "C" {
     }
     auto out = std::find_first_of(haystack->data + upos * sizeof(KCHAR), haystack->data + len(haystack) * sizeof(KCHAR),
         needle->data,   needle->data   + len(needle) * sizeof(KCHAR));
-    int64_t ret = (out - haystack->data) / sizeof(KCHAR);
+    assert(out >= haystack->data);
+    uint64_t ret = (out - haystack->data) / sizeof(KCHAR);
     // search returns the end of the range if it is not found, but we want -1 in such a case.
     auto res = (ret < len(haystack))?ret:-1;
     mpz_init_set_si(result, res);
@@ -161,16 +164,15 @@ extern "C" {
     auto end = (upos < len(haystack))?upos:len(haystack);
     auto out = std::find_first_of(std::reverse_iterator<const char *>(&haystack->data[end]), std::reverse_iterator<const char *>(&haystack->data[0]),
         &needle->data[0], &needle->data[len(needle)]);
-    auto ret = &*out - &haystack->data[0];
+    assert(&*out >= &haystack->data[0]);
+    size_t ret = &*out - &haystack->data[0];
     auto res = (ret < end)?ret:-1;
     mpz_init_set_si(result, res);
     return move_int(result);
   }
 
-  string * makeString(const KCHAR * input, ssize_t len = -1) {
-    if (len == -1) {
-      len = strlen(input);
-    }
+  string * makeString(const KCHAR * input, ssize_t len_ = -1) {
+    size_t len = len_ == -1? strlen(input) : (size_t)len_;
     auto ret = static_cast<string *>(koreAllocToken(sizeof(string) + len));
     memcpy(ret->data, input, len);
     set_len(ret, len);
@@ -178,7 +180,7 @@ extern "C" {
   }
 
   char * getTerminatedString(string * str) {
-    int length = len(str);
+    auto length = len(str);
     string * buf = static_cast<string *>(koreAllocToken(sizeof(string) + (length + 1)));
     memcpy(buf->data, str->data, length);
     set_len(buf, length + 1);
@@ -263,7 +265,7 @@ extern "C" {
     auto pos = start;
     auto end = &haystack->data[len(haystack)];
     size_t matches[len(haystack)];
-    int i = 0;
+    uint64_t i = 0;
     while (i < uoccurences) {
       pos = std::search(pos, end, &needle->data[0], &needle->data[len(needle)]);
       if (pos == end) {
@@ -279,7 +281,7 @@ extern "C" {
     size_t new_len = len(haystack) - i * diff;
     auto ret = static_cast<string *>(koreAllocToken(sizeof(string) + new_len * sizeof(KCHAR)));
     set_len(ret, new_len);
-    int m = 0;
+    uint64_t m = 0;
     for (size_t r = 0, h = 0; r < new_len;) {
       if (m >= i) {
         memcpy(ret->data+r, haystack->data+h, new_len - r);

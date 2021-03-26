@@ -254,7 +254,7 @@ void extract(mpz_t result, mpz_t i, size_t off, size_t len) {
   }
   if (mpz_sgn(i) < 0) {
     mpn_com(result->_mp_d, result->_mp_d, size);
-    for (int j = 0; !carry && j < off_words && j < num_limbs; i++) {
+    for (size_t j = 0; !carry && j < off_words && j < num_limbs; i++) {
       carry = i->_mp_d[j];
     }
     if (!carry) {

@@ -167,6 +167,7 @@ llvm::Type *getValueType(ValueType sort, llvm::Module *Module) {
   case SortCategory::Uncomputed:
     abort();
   }
+  abort();
 }
 
 
@@ -273,7 +274,7 @@ llvm::Value *CreateTerm::createToken(ValueType sort, std::string contents) {
         allocdLimbs.push_back(llvm::ConstantInt::get(llvm::Type::getInt64Ty(Ctx), value->_mp_d[i]));
       }
       limbsVar->setInitializer(llvm::ConstantArray::get(limbsType, allocdLimbs));
-      llvm::Constant *hdr = llvm::ConstantStruct::get(Module->getTypeByName(BLOCKHEADER_STRUCT), llvm::ConstantInt::get(llvm::Type::getInt64Ty(Ctx), sizeof(mpz_hdr) - sizeof(blockheader) | NOT_YOUNG_OBJECT_BIT));
+      llvm::Constant *hdr = llvm::ConstantStruct::get(Module->getTypeByName(BLOCKHEADER_STRUCT), llvm::ConstantInt::get(llvm::Type::getInt64Ty(Ctx), (sizeof(mpz_hdr) - sizeof(blockheader)) | NOT_YOUNG_OBJECT_BIT));
       llvm::ConstantInt *numLimbs = llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), size);
       llvm::Constant *mp_size = llvm::ConstantExpr::getMul(numLimbs, llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(Ctx), sign));
       globalVar->setInitializer(llvm::ConstantStruct::get(
@@ -370,6 +371,7 @@ llvm::Value *CreateTerm::createToken(ValueType sort, std::string contents) {
   case SortCategory::Uncomputed:
     abort();
   }
+  abort();
 }
 
 llvm::Value *CreateTerm::createHook(KORECompositePattern *hookAtt, KORECompositePattern *pattern) {
@@ -715,7 +717,7 @@ llvm::Value *CreateTerm::createFunctionCall(std::string name, ValueType returnCa
     break;
   }
   llvm::Value *AllocSret;
-  for (int i = 0; i < args.size(); i++) {
+  for (size_t i = 0; i < args.size(); i++) {
     llvm::Value *arg = args[i];
     types.push_back(arg->getType());
   }

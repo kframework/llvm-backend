@@ -4,6 +4,7 @@
 #include<cstdint>
 #include<cstdlib>
 #include<cstring>
+#include<cmath>
 
 #include "runtime/header.h"
 #include "runtime/alloc.h"
@@ -517,9 +518,9 @@ BOOST_AUTO_TEST_CASE(buffer_empty) {
 
 BOOST_AUTO_TEST_CASE(buffer_concat) {
   auto buf = hook_BUFFER_empty();
-  int totalLen = 0;
+  size_t totalLen = 0;
   for (int i = 0; i < 10000; i++) {
-    int len = rand() % 1000;
+    size_t len = rand() % 1000;
     totalLen += len;
     auto str = static_cast<string *>(malloc(sizeof(string) + len));
     set_len(str, len);

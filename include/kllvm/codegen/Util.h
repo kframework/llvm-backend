@@ -18,7 +18,7 @@ template<class...Ts>
 static llvm::Function* getOrInsertFunction(llvm::Module *module, Ts... Args) {
   llvm::Value *callee;
   auto ret = module->getOrInsertFunction(Args...);
-#if __clang_major__ >= 9
+#if LLVM_LIB_VERSION_MAJOR >= 9
   callee = ret.getCallee();
 #else
   callee = ret;

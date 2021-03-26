@@ -223,7 +223,8 @@ BOOST_AUTO_TEST_CASE(call) {
   list * structFields = static_cast<list *>(koreAlloc(sizeof(list)));
   list tmp = hook_LIST_element(argtype);
   tmp = hook_LIST_concat(&tmp, &tmp);
-  memcpy(structFields, &tmp, sizeof(list));
+  //TODO: explain why this is ok
+  memcpy((void *)structFields, &tmp, sizeof(list));
 
   memcpy(structType->children, &structFields, sizeof(list *));
 
@@ -305,7 +306,8 @@ BOOST_AUTO_TEST_CASE(call) {
 
   list * structFields2 = static_cast<list *>(koreAlloc(sizeof(list)));
   list tmp2 = hook_LIST_element(structArgType);
-  memcpy(structFields2, &tmp2, sizeof(list));
+  //TODO: explain why this is ok
+  memcpy((void *)structFields2, &tmp2, sizeof(list));
 
   memcpy(structType2->children, &structFields2, sizeof(list *));
   

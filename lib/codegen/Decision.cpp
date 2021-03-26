@@ -71,7 +71,7 @@ static std::pair<std::string, std::string> getFailPattern(DecisionCase const& _c
     _case.getConstructor()->getSort()->print(returnSort);
     std::string result = symbol.str() + "(";
     std::string conn = "";
-    for (int i = 0; i < _case.getConstructor()->getArguments().size(); i++) {
+    for (size_t i = 0; i < _case.getConstructor()->getArguments().size(); i++) {
       result += conn;
       result += "Var'Unds'";
       std::ostringstream argSort;
@@ -177,7 +177,7 @@ void SwitchNode::codegen(Decision *d) {
     }
     d->CurrentBlock = entry.first;
     if (!isInt) {
-      int offset = 0;
+      size_t offset = 0;
       llvm::StructType *BlockType = getBlockType(d->Module, d->Definition, _case.getConstructor());
       llvm::BitCastInst *Cast = new llvm::BitCastInst(val, llvm::PointerType::getUnqual(BlockType), "", d->CurrentBlock);
       KORESymbolDeclaration *symbolDecl = d->Definition->getSymbolDeclarations().at(_case.getConstructor()->getName());
@@ -512,7 +512,7 @@ void abortWhenStuck(llvm::BasicBlock *CurrentBlock, llvm::Module *Module, KORESy
     llvm::Value *Block = allocateTerm(BlockType, CurrentBlock);
     llvm::Value *BlockHeaderPtr = llvm::GetElementPtrInst::CreateInBounds(BlockType, Block, {llvm::ConstantInt::get(llvm::Type::getInt64Ty(Ctx), 0), llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 0)}, symbol->getName(), CurrentBlock);
     new llvm::StoreInst(BlockHeader, BlockHeaderPtr, CurrentBlock);
-    for (int idx = 0; idx < symbol->getArguments().size(); idx++) {
+    for (size_t idx = 0; idx < symbol->getArguments().size(); idx++) {
       auto cat = dynamic_cast<KORECompositeSort *>(symbol->getArguments()[idx].get())->getCategory(d);
       auto type = getParamType(cat, Module);
       llvm::Value *ChildValue = codegen.load(std::make_pair("_" + std::to_string(idx+1), type));
@@ -535,7 +535,7 @@ void makeEvalFunction(KORESymbol *function, KOREDefinition *definition, llvm::Mo
 void addOwise(llvm::BasicBlock *stuck, llvm::Module *module, KORESymbol *symbol, Decision &codegen, KOREDefinition *d) {
   llvm::StringMap<llvm::Value *> finalSubst;
   ptr<KORECompositePattern> pat = KORECompositePattern::Create(symbol);
-  for (int i = 0; i < symbol->getArguments().size(); i++) {
+  for (size_t i = 0; i < symbol->getArguments().size(); i++) {
     auto cat = dynamic_cast<KORECompositeSort *>(symbol->getArguments()[i].get())->getCategory(d);
     auto type = getParamType(cat, module);
 

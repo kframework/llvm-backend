@@ -85,7 +85,7 @@ bool KORECompositeSort::operator==(const KORESort &other) const {
     if (sort->name != name || sort->arguments.size() != arguments.size()) {
       return false;
     }
-    for (int i = 0; i < arguments.size(); ++i) {
+    for (size_t i = 0; i < arguments.size(); ++i) {
       if (*sort->arguments[i] != *arguments[i]) return false;
     }
     return true;
@@ -179,7 +179,7 @@ bool KORESymbol::operator==(const KORESymbol &other) const {
   if (name != other.name || arguments.size() != other.arguments.size()) {
     return false;
   }
-  for (int i = 0; i < arguments.size(); ++i) {
+  for (size_t i = 0; i < arguments.size(); ++i) {
     if (*arguments[i] != *other.arguments[i]) return false;
   }
   return true;
@@ -674,7 +674,7 @@ void KORECompositePattern::prettyPrint(std::ostream &out, PrettyPrintData const&
     auto format = data.format.at(name);
     int localIndent = 0;
     int localColor = 0;
-    for (int i = 0; i < format.length(); ++i) {
+    for (size_t i = 0; i < format.length(); ++i) {
       char c = format[i];
       if (c == '%') {
         if (i == format.length() - 1) {
@@ -696,7 +696,7 @@ void KORECompositePattern::prettyPrint(std::ostream &out, PrettyPrintData const&
             break;
           case 'c':
             if (data.colors.count(name)) {
-              if (localColor >= data.colors.at(name).size() ) {
+              if ((size_t)localColor >= data.colors.at(name).size() ) {
                 abort();
               }
               color(out, data.colors.at(name)[localColor++], data);
@@ -723,7 +723,7 @@ void KORECompositePattern::prettyPrint(std::ostream &out, PrettyPrintData const&
             }
             i--;
             int idx = std::stoi(buf);
-            if (idx == 0 || idx > arguments.size()) {
+            if (idx == 0 || (size_t)idx > arguments.size()) {
               abort();
             }
             KOREPattern *inner = arguments[idx-1].get();
@@ -809,7 +809,7 @@ struct CompareFirst {
         size_t thisChunkLength = thisChunk.length();
         result = thisChunkLength - thatChunk.length();
         if (result == 0) {
-          for (int i = 0; i < thisChunkLength; i++) {
+          for (size_t i = 0; i < thisChunkLength; i++) {
             result = thisChunk[i] - thatChunk[i];
             if (result != 0) {
               return result < 0;
@@ -869,7 +869,7 @@ sptr<KOREPattern> KORECompositePattern::sortCollections(PrettyPrintData const& d
       items.push_back(item.second);
     }
     sptr<KOREPattern> result = items[0];
-    for (int i = 1; i < items.size(); ++i) {
+    for (size_t i = 1; i < items.size(); ++i) {
       sptr<KORECompositePattern> tmp = KORECompositePattern::Create(constructor.get());
       tmp->addArgument(result);
       tmp->addArgument(items[i]);

@@ -66,6 +66,9 @@ void setKoreMemoryFunctionsForGMP() {
    mp_set_memory_functions(koreAllocMP, koreReallocMP, koreFree);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+
 __attribute__ ((always_inline)) void* koreAlloc(size_t requested) {
   return arenaAlloc(&youngspace, requested);
 }
@@ -144,5 +147,7 @@ __attribute__ ((always_inline)) void* koreAllocFloatingOld(size_t requested) {
   set_len(result, sizeof(floating_hdr) - sizeof(blockheader));
   return &result->f;
 }
+
+#pragma GCC diagnostic pop
 
 }

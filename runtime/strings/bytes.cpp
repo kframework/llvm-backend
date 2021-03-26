@@ -26,7 +26,7 @@ extern "C" {
   // constant value in the K term representation
   uint64_t tag_big_endian() {
     static uint64_t tag = (uint64_t)-1;
-    if (tag == -1) {
+    if (tag == (uint64_t)-1) {
       tag = (uint64_t)leaf_block(getTagForSymbolName("LblbigEndianBytes{}"));
     }
     return tag;
@@ -36,7 +36,7 @@ extern "C" {
   // constant value in the K term representation
   uint64_t tag_unsigned() {
     static uint64_t tag = (uint64_t)-1;
-    if (tag == -1) {
+    if (tag == (uint64_t)-1) {
       tag = (uint64_t)leaf_block(getTagForSymbolName("LblunsignedBytes{}"));
     }
     return tag;

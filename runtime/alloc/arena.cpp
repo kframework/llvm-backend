@@ -13,6 +13,10 @@ const size_t BLOCK_SIZE = 1024 * 1024;
 #define mem_block_header(ptr) \
   ((memory_block_header *)(((uintptr_t)(ptr) - 1) & ~(BLOCK_SIZE-1)))
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+
 __attribute__ ((always_inline))
 void arenaReset(struct arena *Arena) {
   char id = Arena->allocation_semispace_id;
@@ -225,3 +229,5 @@ void freeAllMemory() {
   next_superblock_ptr = 0;
   blocks_left = 0;
 }
+
+#pragma GCC diagnostic pop

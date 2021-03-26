@@ -61,7 +61,7 @@ static blockheader kseqHeader = {getBlockHeaderForSymbol((uint64_t)getTagForSymb
 #define get_header(name, symbol) \
 static struct blockheader name() {\
   static struct blockheader hdr = {(uint64_t)-1}; \
-  if (hdr.hdr == -1) { \
+  if (hdr.hdr == (uint64_t)-1) { \
     hdr = getBlockHeaderForSymbol((uint64_t)getTagForSymbolName(symbol)); \
   } \
   return hdr; \
@@ -79,7 +79,7 @@ get_header(listWrapHdr, "LblJSONList{}")
 #define get_block(name, symbol) \
 static block *name() {\
   static uint64_t tag = (uint64_t)-1; \
-  if (tag == -1) { \
+  if (tag == (uint64_t)-1) { \
     tag = (uint64_t)leaf_block(getTagForSymbolName(symbol)); \
   } \
   return (block *)tag; \
@@ -148,7 +148,7 @@ struct KoreHandler : BaseReaderHandler<UTF8<>, KoreHandler> {
 
   bool EndObject(SizeType memberCount) {
     result = dotList();
-    for (int i = 0; i < memberCount; i++) {
+    for (SizeType i = 0; i < memberCount; i++) {
       jsonmember *member = (jsonmember *)koreAlloc(sizeof(jsonmember));
       member->h = membHdr();
       member->val = stack.back();
@@ -172,7 +172,7 @@ struct KoreHandler : BaseReaderHandler<UTF8<>, KoreHandler> {
 
   bool EndArray(SizeType elementCount) {
     result = dotList();
-    for (int i = 0; i < elementCount; i++) {
+    for (SizeType i = 0; i < elementCount; i++) {
       jsonlist *list = (jsonlist *)koreAlloc(sizeof(jsonlist));
       list->h = listHdr();
       list->hd = stack.back();

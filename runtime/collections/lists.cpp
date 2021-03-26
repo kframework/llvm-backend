@@ -133,7 +133,7 @@ extern "C" {
     if (size2 < 32) {
       auto tmp = l1->transient();
 
-      for (int i = idx, j = 0; j < size2; ++i, ++j) {
+      for (size_t i = idx, j = 0; j < size2; ++i, ++j) {
         tmp.set(i, l2->at(j));
       }
 

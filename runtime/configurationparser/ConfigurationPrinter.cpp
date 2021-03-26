@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cstdarg>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -50,21 +51,21 @@ void sfprintf(writer *file, const char *fmt, ...) {
     char buf[8192];
     char *finalBuf = buf;
     int res = vsnprintf(buf + sizeof(blockheader), sizeof(buf) - sizeof(blockheader), fmt, args);
-    if (res >= sizeof(buf) - sizeof(blockheader)) {
+    if ((size_t)res >= sizeof(buf) - sizeof(blockheader)) {
       size_t size = sizeof(buf)*2;
       finalBuf = (char *)malloc(size);
       memcpy(finalBuf, buf, sizeof(buf));
       res = vsnprintf(finalBuf + sizeof(blockheader), size - sizeof(blockheader), fmt, args);
-      if (res >= size - sizeof(blockheader)) {
+      if ((size_t)res >= size - sizeof(blockheader)) {
         do {
           size *= 2;
-	  finalBuf = (char *)realloc(finalBuf, size);
-	  res = vsnprintf(finalBuf + sizeof(blockheader), size - sizeof(blockheader), fmt, args);
-	} while (res >= size - sizeof(blockheader));
+	      finalBuf = (char *)realloc(finalBuf, size);
+	      res = vsnprintf(finalBuf + sizeof(blockheader), size - sizeof(blockheader), fmt, args);
+	    } while ((size_t)res >= size - sizeof(blockheader));
       }
     }
     string *str = (string *)finalBuf;
-    set_len(str, res);
+    set_len(str, (size_t)res);
     hook_BUFFER_concat(file->buffer, str);
   }
 }
