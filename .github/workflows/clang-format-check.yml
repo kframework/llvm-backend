@@ -8,14 +8,21 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# No job here writes to the repository, so the token stays read-only regardless of
+# the repository default.
+permissions:
+  contents: read
+
 jobs:
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
     - name: Check that C and C++ code is correctly formatted
-      uses: jidicula/clang-format-action@v4.11.0
+      uses: jidicula/clang-format-action@654a770daa28443dd111d133e4083e21c1075674  # v4.18.0
       with:
         exclude-regex: '(build|config|deps)'
         clang-format-version: 15
@@ -24,8 +31,10 @@ jobs:
     name: Shell check
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v4
-    - uses: ludeeus/action-shellcheck@2.0.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38  # 2.0.0
       name: Check that shell scripts follow best practices
       with:
         scandir: './bin'
@@ -34,40 +43,46 @@ jobs:
   clang-tidy-check:
     name: Clang Tidy check
     runs-on: [self-hosted, linux, normal]
+    env:
+      CONTAINER: llvm-backend-${{ github.job }}-${{ github.sha }}
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: 'Set up Docker'
         uses: ./.github/actions/with-docker
         with:
-          tag: llvm-backend-ci-${{ github.sha }}
+          tag: ${{ env.CONTAINER }}
           os: ubuntu
           distro: jammy
           llvm: 15
 
       - name: 'Run clang-tidy checks'
         run: |
-          docker exec -t llvm-backend-ci-${GITHUB_SHA} /bin/bash -c 'mkdir build && cd build && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DBUILD_TESTS=On ..'
-          docker exec -t llvm-backend-ci-${GITHUB_SHA} scripts/clang-tidy.sh
+          docker exec -t "${CONTAINER}" /bin/bash -c 'mkdir build && cd build && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=On -DBUILD_TESTS=On ..'
+          docker exec -t "${CONTAINER}" scripts/clang-tidy.sh
 
       - name: 'Tear down Docker'
         if: always()
         run: |
-          docker stop --time=0 llvm-backend-ci-${GITHUB_SHA}
-          docker container rm --force llvm-backend-ci-${GITHUB_SHA} || true
+          # Best effort: the container does not exist if 'Set up Docker' failed, and a
+          # non-zero exit here would mask the step that actually failed.
+          docker rm -f "${CONTAINER}" || true
 
   scala-check:
     name: Scala formatting check
     runs-on: ubuntu-latest
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: 'Set up Java 17'
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6.1.0
         with:
           distribution: 'zulu'
           java-version: 17
