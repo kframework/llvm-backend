@@ -1,7 +1,5 @@
-ARG BASE_OS
-ARG BASE_DISTRO
-
-FROM ${BASE_OS}:${BASE_DISTRO}
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ENV TZ America/Chicago
 ENV DEBIAN_FRONTEND=noninteractive
@@ -50,11 +48,18 @@ ARG USER=github-user
 ARG GROUP=$USER
 ARG USER_ID=1000
 ARG GROUP_ID=$USER_ID
-RUN groupadd -g $GROUP_ID $GROUP && useradd -m -u $USER_ID -s /bin/sh -g $GROUP $USER
+# Noble images ship an `ubuntu` user with uid 1000, which would clash.
+RUN    (userdel --remove ubuntu 2>/dev/null || true) \
+    && groupadd -g $GROUP_ID $GROUP && useradd -m -u $USER_ID -s /bin/sh -g $GROUP $USER
 
 USER $USER:$GROUP
+# The sources are copied in here, see .github/actions/with-docker.
+RUN mkdir /home/$USER/workspace
+WORKDIR /home/$USER/workspace
 
-RUN pipx install lit
+# lit 23 refuses the external shell that test/lit.cfg.py asks for (ShTest(True)),
+# and PyPI has no release between 18.1.8 and 23.
+RUN pipx install lit==18.1.8
 
 ADD matching/pom.xml /home/user/.tmp-maven/
 RUN    cd /home/user/.tmp-maven \

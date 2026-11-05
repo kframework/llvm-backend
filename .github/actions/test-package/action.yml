@@ -2,7 +2,7 @@ name: 'Build Ubuntu Package'
 description: 'Build the package for a given distribution and test it.'
 
 inputs:
-  os: 
+  os:
     description: 'Release OS to build and test package for.'
     required: true
   distro:
@@ -32,10 +32,11 @@ runs:
   steps:
 
   - name: 'Check out code'
-    uses: actions/checkout@v4
+    uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
     with:
       path: k-${{ inputs.distro }}
       submodules: recursive
+      persist-credentials: false
 
   - name: 'Set up Docker'
     uses: ./.github/actions/with-docker
@@ -56,7 +57,9 @@ runs:
       PKG_NAME: ${{ inputs.pkg-name }}
     run: |
       set -euxo pipefail
-      docker exec -t kllvm-package-build-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA} /bin/bash -c "${BUILD_PACKAGE} ${PKG_NAME}"
+      docker exec -t "kllvm-package-build-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA}" /bin/bash -c "${BUILD_PACKAGE} ${PKG_NAME}"
+      # The sources are copied into the container, so copy the package back out.
+      docker cp "kllvm-package-build-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA}:/home/github-user/workspace/${PKG_NAME}" "${PKG_NAME}"
 
   - name: 'Tear down Docker'
     shell: bash {0}
@@ -65,8 +68,9 @@ runs:
       BASE_OS: ${{ inputs.os }}
     if: always()
     run: |
-      docker stop --time=0 kllvm-package-build-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA}
-      docker container rm --force kllvm-package-build-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA} || true
+      # Best effort: the container does not exist if 'Set up Docker' failed, and a
+      # non-zero exit here would mask the step that actually failed.
+      docker rm -f "kllvm-package-build-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA}" || true
 
   - name: 'Set up Docker Test Image: ${{ inputs.os }}:${{ inputs.distro }}'
     shell: bash {0}
@@ -75,15 +79,15 @@ runs:
       BASE_DISTRO: ${{ inputs.distro }}
     run: |
       set -euxo pipefail
-      workspace=$(pwd)
-      cd k-${BASE_DISTRO}
-      docker run                                                      \
-        --name kllvm-package-test-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA} \
-        --rm -it                                                      \
-        --detach                                                      \
-        --workdir /opt/workspace                                      \
-        -v "${workspace}:/opt/workspace"                              \
-        ${BASE_OS}:${BASE_DISTRO}
+      docker rm -f "kllvm-package-test-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA}" || true
+      # ECR Public mirror of the Docker official images, without Docker Hub's pull rate limit.
+      docker run                                                          \
+        --name "kllvm-package-test-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA}" \
+        --rm -it                                                          \
+        --detach                                                          \
+        --workdir /opt/workspace                                          \
+        -v "$(pwd):/opt/workspace"                                        \
+        "public.ecr.aws/docker/library/${BASE_OS}:${BASE_DISTRO}"
 
   - name: 'Test Package: ${{ inputs.os }}:${{ inputs.distro }}'
     shell: bash {0}
@@ -92,11 +96,9 @@ runs:
       BASE_DISTRO: ${{ inputs.distro }}
       TEST_PACKAGE: ${{ inputs.test-package }}
       PKG_NAME: ${{ inputs.pkg-name }}
-      SUBDIR: k-${{ inputs.distro }}/
     run: |
       set -euxo pipefail
-      mv ${SUBDIR}${PKG_NAME} ${PKG_NAME}
-      docker exec -t kllvm-package-test-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA} /bin/bash -c "${TEST_PACKAGE} ${PKG_NAME}"
+      docker exec -t "kllvm-package-test-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA}" /bin/bash -c "${TEST_PACKAGE} ${PKG_NAME}"
 
   - name: 'Tear down Docker Test'
     shell: bash {0}
@@ -105,5 +107,4 @@ runs:
       BASE_DISTRO: ${{ inputs.distro }}
     if: always()
     run: |
-      docker stop --time=0 k-package-test-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA}
-      docker container rm --force k-package-test-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA} || true
+      docker rm -f "kllvm-package-test-${BASE_OS}-${BASE_DISTRO}-${GITHUB_SHA}" || true

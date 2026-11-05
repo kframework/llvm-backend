@@ -8,36 +8,33 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# No job here writes to the repository, so the token stays read-only regardless of
+# the repository default.
+permissions:
+  contents: read
+
 jobs:
   compile-nix-flake:
     name: 'Nix flake'
     strategy:
       fail-fast: false
       matrix:
+        # `os` is unused, but it is part of the job names that branch protection requires.
         include:
           - runner: [self-hosted, linux, normal]
             os: ubuntu-24.04
           - runner: [self-hosted, self-macos-latest]
             os: self-macos-latest
+    # Both runners have Nix installed. Neither Nix nor cachix-action is installed here:
+    # cachix-action would pick up a revoked token stored on the runners.
     runs-on: ${{ matrix.runner }}
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           # Check out pull request HEAD instead of merge commit.
           ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: 'Install Nix'
-        if: ${{ !startsWith(matrix.os, 'self') }}
-        uses: cachix/install-nix-action@v22
-        with:
-          install_url: https://releases.nixos.org/nix/nix-2.13.3/install
-
-      - name: 'Install Cachix'
-        uses: cachix/cachix-action@v12
-        with:
-          name: k-framework
-          skipPush: true
+          persist-credentials: false
 
       - name: 'Build LLVM backend'
         run: GC_DONT_GC=1 nix build --print-build-logs .
@@ -62,29 +59,34 @@ jobs:
             llvm: 15
           - distro: noble
             llvm: 17
+    env:
+      CONTAINER: llvm-backend-${{ github.job }}-${{ matrix.distro }}-${{ github.sha }}
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: 'Set up Docker'
         uses: ./.github/actions/with-docker
         with:
-          tag: llvm-backend-ci-${{ github.sha }}
+          tag: ${{ env.CONTAINER }}
           os: ubuntu
           distro: ${{ matrix.distro }}
           llvm: ${{ matrix.llvm }}
 
       - name: 'Run backend tests'
-        run: |
-          docker exec -t llvm-backend-ci-${GITHUB_SHA} .github/workflows/ci-tests.sh ${{ matrix.llvm }}
+        env:
+          LLVM_VERSION: ${{ matrix.llvm }}
+        run: docker exec -t "${CONTAINER}" .github/workflows/ci-tests.sh "${LLVM_VERSION}"
 
       - name: 'Tear down Docker'
         if: always()
         run: |
-          docker stop --time=0 llvm-backend-ci-${GITHUB_SHA}
-          docker container rm --force llvm-backend-ci-${GITHUB_SHA} || true
+          # Best effort: the container does not exist if 'Set up Docker' failed, and a
+          # non-zero exit here would mask the step that actually failed.
+          docker rm -f "${CONTAINER}" || true
 
   build-ubuntu-package:
     name: 'Build Ubuntu package'
@@ -99,12 +101,10 @@ jobs:
             llvm: 17
 
     steps:
-      - uses: actions/checkout@v4
       - name: 'Check out code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          path: k-llvm-${{ matrix.distro }}
-          submodules: recursive
+          persist-credentials: false
 
       - name: 'Build package in Docker'
         uses: ./.github/actions/test-package
